@@ -28,9 +28,13 @@ def cli(config, records_file):
     datadir = c['cheetah']['datadir']
     point = Point(datadir, c['points'])
 
-    point.award(records_file, lambda r: r[-1] * 2)
+    # point.award(records_file, lambda r: r[-1] * 2)
+    # point.award(
+    #     records_file,
+    #     lambda r: 2 if r[-1] > 2 else 1 if r[-1] > 1 else 0
+    # )
     point.award(
         records_file,
-        lambda r: 2 if r[-1] > 2 else 1 if r[-1] > 1 else 0
+        lambda r: (r[-1] * 2) + (2 if r[-1] > 2 else 1 if r[-1] > 1 else 0)
     )
     point.persist()
