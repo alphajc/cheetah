@@ -1,4 +1,5 @@
 import os
+import shutil
 import openpyxl
 import logging
 import pandas as pd
@@ -87,8 +88,13 @@ class Point:
     def persist(self):
         with pd.ExcelWriter(
             self.points_fpath,
-            mode='a'
+            mode='a',
+            engine='openpyxl'
         ) as writer:
+            shutil.copyfile(
+                writer.path,
+                '{}.{}'.format(writer.path, date.today().strftime('%Y%m%d'))
+            )
             writer.book.remove(writer.book['total'])
             writer.book.remove(writer.book['monthly'])
             writer.book.create_sheet('total', 0)
