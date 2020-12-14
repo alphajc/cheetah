@@ -1,32 +1,44 @@
 import os
 import logging
-from apscheduler.schedulers.blocking import BlockingScheduler
+import asyncio
+from datetime import date, timedelta
+# from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from cheetah.points import Point
+from cheetah.joy_run import JoyRun
 
 
 class Daemon:
     def __init__(self, config):
         datadir = config['cheetah']['datadir']
         self.point = Point(datadir, config['points'])
-        self.sched = BlockingScheduler()
+        # self.sched = BlockingScheduler()
+        self.sched = AsyncIOScheduler()
         self.logger = logging.getLogger(__name__)
+        self.joy_run = JoyRun(config['Joy Run'])
 
-    def _award_by_day(self):
+    async def _award_by_day(self):
         self.logger.info('Award by day')
 
         """调取下载过去一天的数据，并返回文件名"""
-        records_fname = '202012_十方教育跑团跑步数据统计_1201-1208_pypq.xlsx'
-        records_fpath = os.path.join(self.datadir, records_fname)
+        records_fpath  = await joy_run.export_running_records(
+            today-timedelta(days=1),
+            today)
+        # records_fname = '202012_十方教育跑团跑步数据统计_1201-1208_pypq.xlsx'
+        # records_fpath = os.path.join(self.datadir, records_fname)
 
         self.point.award(records_fpath, lambda r: r[-1] * 2)
         self.persist()
 
-    def _award_by_week(self):
+    async def _award_by_week(self):
         self.logger.info('Award by week')
 
         """调取下载过去一周的数据，并返回文件名"""
-        records_fname = '202012_十方教育跑团跑步数据统计_1201-1208_pypq.xlsx'
-        records_fpath = os.path.join(self.datadir, records_fname)
+        records_fpath = await joy_run.export_running_records(
+            today-timedelta(weeks=1),
+            today)
+        # records_fname = '202012_十方教育跑团跑步数据统计_1201-1208_pypq.xlsx'
+        # records_fpath = os.path.join(self.datadir, records_fname)
 
         self.point.award(
             records_fpath,
@@ -42,17 +54,23 @@ class Daemon:
 
     def run(self):
         self.sched.start()
+        print('Press Ctrl+{0} to exit'
+              .format('Break' if os.name == 'nt' else 'C'))
+        try:
+            asyncio.get_event_loop().run_forever()
+        except (KeyboardInterrupt, SystemExit):
+            pass
 
     def add_jobs(self):
         self.sched.add_job(
             self._award_by_month,
-            'cron', day=1, hour=0, minute=10
+            'cron', day=1, hour=4, minute=10
         )
         self.sched.add_job(
             self._award_by_week,
-            'cron', day_of_week='mon', hour=0, minute=20
+            'cron', day_of_week='mon', hour=4, minute=20
         )
         self.sched.add_job(
             self._award_by_day,
-            'cron', hour=0, minute=30
+            'cron', hour=4, minute=30
         )
