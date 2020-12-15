@@ -1,7 +1,7 @@
 import os
 import logging
 import asyncio
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 # from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from cheetah.points import Point
@@ -15,26 +15,28 @@ class Daemon:
         # self.sched = BlockingScheduler()
         self.sched = AsyncIOScheduler()
         self.logger = logging.getLogger(__name__)
-        self.joy_run = JoyRun(config['Joy Run'])
+        self.joy_run = JoyRun(config['cheetah'])
 
     async def _award_by_day(self):
         self.logger.info('Award by day')
 
         """调取下载过去一天的数据，并返回文件名"""
-        records_fpath  = await joy_run.export_running_records(
+        today = date.today()
+        records_fpath  = await self.joy_run.export_running_records(
             today-timedelta(days=1),
             today)
         # records_fname = '202012_十方教育跑团跑步数据统计_1201-1208_pypq.xlsx'
         # records_fpath = os.path.join(self.datadir, records_fname)
 
         self.point.award(records_fpath, lambda r: r[-1] * 2)
-        self.persist()
+        self.point.persist()
 
     async def _award_by_week(self):
         self.logger.info('Award by week')
 
         """调取下载过去一周的数据，并返回文件名"""
-        records_fpath = await joy_run.export_running_records(
+        today = date.today()
+        records_fpath = await self.joy_run.export_running_records(
             today-timedelta(weeks=1),
             today)
         # records_fname = '202012_十方教育跑团跑步数据统计_1201-1208_pypq.xlsx'
@@ -44,7 +46,7 @@ class Daemon:
             records_fpath,
             lambda r: 2 if r[-1] > 2 else 1 if r[-1] > 1 else 0
         )
-        self.persist()
+        self.point.persist()
 
     def _award_by_month(self):
         self.logger.info('Award by month')
@@ -64,13 +66,13 @@ class Daemon:
     def add_jobs(self):
         self.sched.add_job(
             self._award_by_month,
-            'cron', day=1, hour=4, minute=10
+            'cron', day=1, hour=6, minute=10
         )
         self.sched.add_job(
             self._award_by_week,
-            'cron', day_of_week='mon', hour=4, minute=20
+            'cron', day_of_week='mon', hour=6, minute=20
         )
         self.sched.add_job(
             self._award_by_day,
-            'cron', hour=4, minute=30
+            'cron', hour=6, minute=30
         )

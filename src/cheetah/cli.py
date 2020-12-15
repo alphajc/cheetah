@@ -13,6 +13,7 @@ def daemon(config):
     c.read(config)
     logging.basicConfig(level=c['logging']['level'])
     d = Daemon(c)
+    d.add_jobs()
     d.run()
 
 
