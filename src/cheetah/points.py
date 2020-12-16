@@ -91,9 +91,16 @@ class Point:
             mode='a',
             engine='openpyxl'
         ) as writer:
+            """备份"""
             shutil.copyfile(
                 writer.path,
-                '{}.{}'.format(writer.path, date.today().strftime('%Y%m%d'))
+                os.path.join(
+                    os.path.dirname(writer.path),
+                    '{}_{}'.format(
+                        date.today().strftime('%Y%m%d'),
+                        os.path.basename(writer.path)
+                    )
+                )
             )
             writer.book.remove(writer.book['total'])
             writer.book.remove(writer.book['monthly'])
