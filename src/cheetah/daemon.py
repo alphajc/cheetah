@@ -4,6 +4,7 @@ import asyncio
 from datetime import date, datetime, timedelta
 # from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from xlrd.biffh import XLRDError
 from cheetah.points import Point
 from cheetah.joy_run import JoyRun
 
@@ -25,10 +26,13 @@ class Daemon:
         records_fpath  = await self.joy_run.export_running_records(
             today-timedelta(days=1),
             today)
-        # records_fname = '202012_十方教育跑团跑步数据统计_1201-1208_pypq.xlsx'
-        # records_fpath = os.path.join(self.datadir, records_fname)
 
-        self.point.award(records_fpath, lambda r: r[-1] * 2)
+        try:
+            self.point.award(records_fpath, lambda r: r[-1] * 2)
+        except XLRDError as e:
+            self.logger.warning(e)
+            asyncio.sleep(10)
+            self._award_by_day()
         self.point.persist()
 
     async def _award_by_week(self):
@@ -39,13 +43,16 @@ class Daemon:
         records_fpath = await self.joy_run.export_running_records(
             today-timedelta(weeks=1),
             today)
-        # records_fname = '202012_十方教育跑团跑步数据统计_1201-1208_pypq.xlsx'
-        # records_fpath = os.path.join(self.datadir, records_fname)
 
-        self.point.award(
-            records_fpath,
-            lambda r: 2 if r[-1] > 2 else 1 if r[-1] > 1 else 0
-        )
+        try:
+            self.point.award(
+                records_fpath,
+                lambda r: 2 if r[-1] > 2 else 1 if r[-1] > 1 else 0
+            )
+        except XLRDError as e:
+            self.logger.warning(e)
+            asyncio.sleep(10)
+            self._award_by_week()
         self.point.persist()
 
     def _award_by_month(self):

@@ -3,7 +3,6 @@ import shutil
 import openpyxl
 import logging
 import pandas as pd
-from xlrd.biffh import XLRDError
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
@@ -27,11 +26,7 @@ class Point:
 
     """加分"""
     def award(self, records_fpath, get_points):
-        try:
-            records = pd.read_excel(records_fpath, header=10, index_col='用户ID')
-        except XLRDError:
-            self.logger.info('昨日无跑步记录')
-            return
+        records = pd.read_excel(records_fpath, header=10, index_col='用户ID')
 
         for record in records.itertuples():
             new_points = get_points(record[-3:])  # 计算新积分
